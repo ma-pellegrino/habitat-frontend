@@ -120,12 +120,32 @@ document.addEventListener('alpine:init', () => {
             const canvas = document.getElementById('expenseChart');
             if (!canvas || this.view !== 'expenses' || this.items.length === 0) return;
             const sorted = [...this.items].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // 1. Aggregate daily net amounts
+            const dailyNet = {};
+            sorted.forEach(i => {
+                const day = i.date.split('T')[0];
+                const val = String(i.isExit) === 'true' ? -i.amount : i.amount;
+                dailyNet[day] = (dailyNet[day] || 0) + val;
+            });
+
+            // 2. Build cumulative running balance
+            const days = Object.keys(dailyNet).sort();
+            let running = 0;
+            const labels = [];
+            const data = [];
+            days.forEach(day => {
+                running += dailyNet[day];
+                labels.push(this.formatDate(day));
+                data.push(running);
+            });
+
             if (this.chart) this.chart.destroy();
             this.chart = new Chart(canvas.getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: sorted.map(i => this.formatDate(i.date)),
-                    datasets: [{ label: 'Flow', data: sorted.map(i => String(i.isExit) === 'true' ? -i.amount : i.amount), borderColor: '#000', tension: 0.1, fill: false }]
+                    labels,
+                    datasets: [{ label: 'Saldo', data, borderColor: '#000', tension: 0.1, fill: false }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { font: { size: 9 } } } } }
             });
