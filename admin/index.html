@@ -228,11 +228,11 @@
                 <button :class="view === 'expenses' && 'active'" @click="setView('expenses')">Flow Cassa</button>
                 <button :class="view === 'guests' && 'active'" @click="setView('guests')">Ospitalita'</button>
                 <button :class="view === 'bookings' && 'active'" @click="setView('bookings')">Prenotazioni</button>
-                <button :class="view === 'residency' && 'active'" @click="setView('residency')">Residenze</button>
+                <button :class="view === 'residency' && 'active'" @click="setView('residency')">Residenze <span x-show="residencyCount > 0" x-text="'(' + residencyCount + ')'"></span></button>
                 <button :class="view === 'membership' && membershipTab === 'requests' && 'active'"
-                    @click="membershipTab = 'requests'; setView('membership')">Richiesta Tessere</button>
+                    @click="membershipTab = 'requests'; setView('membership')">Richiesta Tessere <span x-show="membershipRequestCount > 0" x-text="'(' + membershipRequestCount + ')'"></span></button>
                 <button :class="view === 'membership' && membershipTab === 'confirmed' && 'active'"
-                    @click="membershipTab = 'confirmed'; setView('membership')">Tesserati</button>
+                    @click="membershipTab = 'confirmed'; setView('membership')">Tesserati <span x-show="membershipConfirmedCount > 0" x-text="'(' + membershipConfirmedCount + ')'"></span></button>
                 <button @click="logout" style="margin-left: auto; color: red;">LOGOUT</button>
             </nav>
 
@@ -272,9 +272,37 @@
                                         </td>
                                         <td x-text="m.paymentMethod"></td>
                                         <td>
-                                            <button x-show="membershipTab === 'requests'" @click="confirmMembership(m)"
-                                                class="btn-del" style="color:green">✓</button>
-                                            <button @click="deleteItem(m.id)" class="btn-del">X</button>
+                                            <span>
+                                                <button x-show="membershipTab === 'requests'" @click="confirmMembership(m)"
+                                                    class="btn-del" style="color:green">✓</button>
+                                                <button @click="deleteItem(m.id)" class="btn-del">X</button>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card" x-show="membershipTab === 'confirmed' && deletedMemberships.length > 0">
+                        <h3 style="margin:0 0 15px">Cestino <span style="font-weight:normal; font-size:12px;" x-text="'(' + deletedMemberships.length + ')'"></span></h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Socio</th>
+                                    <th>Email</th>
+                                    <th>Eliminato il</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="m in deletedMemberships" :key="m.id">
+                                    <tr>
+                                        <td x-text="m.surname + ' ' + m.name"></td>
+                                        <td x-text="m.email"></td>
+                                        <td x-text="formatDate(m.deletedAt)"></td>
+                                        <td>
+                                            <button @click="restoreMembership(m)" class="btn-del" style="color:green" title="Ripristina">↩</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -520,7 +548,7 @@
                                         <td x-text="formatDate(r.toDate)"></td>
                                         <td x-text="r.proposal" style="white-space:normal; max-width:300px"></td>
                                         <td>
-                                            <button @click="confirmResidency(r)" class="btn-del"
+                                            <button @click="startResidencyApproval(r)" class="btn-del"
                                                 style="color:green">✓</button>
                                             <button @click="deleteItem(r.id)" class="btn-del">X</button>
                                         </td>
@@ -686,6 +714,38 @@
                             @click="confirmModal.resolve(true); confirmModal = null">CONFERMA</button>
                         <button @click="confirmModal.resolve(false); confirmModal = null"
                             style="border:1px solid #000; padding:8px 20px; cursor:pointer;">Annulla</button>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="residencyApproval">
+                <div class="modal-overlay">
+                    <div class="modal-box" style="text-align:left; min-width:400px;">
+                        <h3 style="margin:0 0 10px">Conferma Residenza</h3>
+                        <p style="margin:0 0 15px;">
+                            <b x-text="residencyApproval.residency.name"></b> &mdash;
+                            <span x-text="formatDate(residencyApproval.residency.fromDate)"></span> &rarr;
+                            <span x-text="formatDate(residencyApproval.residency.toDate)"></span>
+                        </p>
+
+                        <label>Stanza</label>
+                        <select x-model="residencyApproval.room">
+                            <option value="">Scegli...</option>
+                            <template x-for="room in residencyApproval.availableRooms" :key="room">
+                                <option :value="room" x-text="room"></option>
+                            </template>
+                        </select>
+
+                        <label>Oggetto Email</label>
+                        <input type="text" x-model="residencyApproval.emailSubject">
+
+                        <label>Corpo Email</label>
+                        <textarea x-model="residencyApproval.emailBody" rows="6"></textarea>
+
+                        <button class="btn-blk" @click="confirmResidency()"
+                            :disabled="!residencyApproval.room">CONFERMA E INVIA</button>
+                        <button @click="residencyApproval = null"
+                            style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Annulla</button>
                     </div>
                 </div>
             </template>

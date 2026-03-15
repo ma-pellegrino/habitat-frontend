@@ -17,6 +17,11 @@ document.addEventListener('alpine:init', () => {
         editingGuest: null,
         newGuestToggle: false,
         newGuestName: '',
+        deletedMemberships: [],
+        membershipRequestCount: 0,
+        membershipConfirmedCount: 0,
+        residencyApproval: null,
+        residencyCount: 0,
         membershipTab: 'requests',
         filter: 'all',
         habitanteFilter: 'all',
@@ -66,10 +71,28 @@ document.addEventListener('alpine:init', () => {
                     this.allBookings = await resB.json();
                 }
 
+                if (this.view === 'membership') {
+                    const resD = await fetch(`${this.BASE_URL}/membership/bin`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    this.deletedMemberships = await resD.json();
+                }
+
                 if (this.view === 'expenses') {
                     this.updateStats();
                     this.$nextTick(() => this.renderChart());
                 }
+
+                // always refresh nav badge counts
+                const [memRes, resRes] = await Promise.all([
+                    fetch(`${this.BASE_URL}/membership/`, { headers: { 'Authorization': `Bearer ${this.token}` } }),
+                    fetch(`${this.BASE_URL}/residency/`, { headers: { 'Authorization': `Bearer ${this.token}` } })
+                ]);
+                const memData = await memRes.json();
+                const resData = await resRes.json();
+                this.membershipRequestCount = Array.isArray(memData) ? memData.filter(m => !m.confirmed).length : 0;
+                this.membershipConfirmedCount = Array.isArray(memData) ? memData.filter(m => m.confirmed).length : 0;
+                this.residencyCount = Array.isArray(resData) ? resData.length : 0;
             } catch (e) { console.error(e); }
         },
 
@@ -305,26 +328,38 @@ document.addEventListener('alpine:init', () => {
             };
         },
 
-        async confirmResidency(r) {
-            if (!await this.showConfirm("Confermare questa residenza?")) return;
+        async startResidencyApproval(r) {
             try {
-                const resG = await fetch(`${this.BASE_URL}/guests/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ name: r.name, email: r.email, isConfirmed: true })
-                });
-                if (!resG.ok) throw new Error("Errore creazione ospite");
-                const guest = await resG.json();
                 const resB = await fetch(`${this.BASE_URL}/bookings/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ guest: guest.id, checkIn: r.fromDate, checkOut: r.toDate, room: 'da assegnare' })
-                });
-                if (!resB.ok) throw new Error("Errore creazione prenotazione");
-                await fetch(`${this.BASE_URL}/residency/${r.id}`, {
-                    method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${this.token}` }
                 });
+                const allBookings = await resB.json();
+                const allRooms = ['ex poni', 'monolocale', 'camerata'];
+                const from = new Date(r.fromDate);
+                const to = new Date(r.toDate);
+                const availableRooms = allRooms.filter(room =>
+                    !allBookings.some(b =>
+                        b.room === room &&
+                        new Date(b.checkIn) < to &&
+                        new Date(b.checkOut) > from
+                    )
+                );
+                const emailSubject = `Conferma residenza - Habitat`;
+                const emailBody = `Ciao ${r.name},\n\nsiamo felici di comunicarti che la tua richiesta di residenza dal ${this.formatDate(r.fromDate)} al ${this.formatDate(r.toDate)} è stata approvata!\n\nA presto,\nHabitat`;
+                this.residencyApproval = { residency: r, room: '', emailSubject, emailBody, availableRooms };
+            } catch (e) { alert(e.message); }
+        },
+
+        async confirmResidency() {
+            const { residency, room, emailSubject, emailBody } = this.residencyApproval;
+            try {
+                const res = await fetch(`${this.BASE_URL}/residency/${residency.id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ room, emailSubject, emailBody })
+                });
+                if (!res.ok) throw new Error("Errore approvazione residenza");
+                this.residencyApproval = null;
                 await this.fetchData();
             } catch (e) { alert(e.message); }
         },
@@ -371,6 +406,18 @@ document.addEventListener('alpine:init', () => {
                     })
                 });
                 if (!resE.ok) throw new Error("Errore creazione spesa tessera");
+                await this.fetchData();
+            } catch (e) { alert(e.message); }
+        },
+
+        async restoreMembership(m) {
+            if (!await this.showConfirm("Ripristinare questo socio?")) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/membership/${m.id}/restore`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) throw new Error("Errore ripristino");
                 await this.fetchData();
             } catch (e) { alert(e.message); }
         },
