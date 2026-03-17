@@ -222,7 +222,7 @@
                 },
 
                 async sendRequest() {
-                    if (!this.form.guestName || !this.form.email || !this.form.checkIn || !this.form.checkOut) {
+                    if (!this.form.guestName || !this.form.email || !this.form.checkIn || !this.form.checkOut || !this.form.presentation) {
                         this.errorMessage = this.lang === 'it' ? "Campi mancanti" : "Missing fields";
                         return;
                     }
@@ -241,7 +241,8 @@
                             email: this.form.email,
                             fromDate: this.form.checkIn,
                             toDate: this.form.checkOut,
-                            proposal: this.form.presentation
+                            proposal: this.form.presentation,
+                            language: this.lang
                         };
                         const res = await fetch(`${this.BASE_URL}/residency/`, {
                             method: 'POST',
@@ -252,7 +253,13 @@
                         const data = await res.json();
 
                         if (!res.ok) {
-                            throw new Error(data.message || "Server Error");
+                            if (data?.fields?.length) {
+                                throw new Error(
+                                    (data.error || (this.lang === 'it' ? 'Errore' : 'Error'))
+                                    + ': ' + data.fields.join(', ')
+                                );
+                            }
+                            throw new Error(data?.error || "Server Error");
                         }
 
                         this.submitted = true;

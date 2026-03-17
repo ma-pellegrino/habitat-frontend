@@ -614,7 +614,7 @@
                                         <td x-show="canWrite">
                                             <button @click="startResidencyApproval(r)" class="btn-del"
                                                 style="color:green">V</button>
-                                            <button @click="deleteItem(r.id)" class="btn-del">X</button>
+                                            <button @click="startResidencyRejection(r)" class="btn-del">X</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -938,6 +938,30 @@
                         <button class="btn-blk" @click="confirmResidency()"
                             :disabled="!residencyApproval.room">CONFERMA E INVIA</button>
                         <button @click="residencyApproval = null"
+                            style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Annulla</button>
+                    </div>
+                </div>
+            </template>
+
+            <!-- MODAL: Residency Rejection -->
+            <template x-if="residencyRejection">
+                <div class="modal-overlay">
+                    <div class="modal-box" style="text-align:left; min-width:400px;">
+                        <h3 style="margin:0 0 10px">Rifiuta Residenza</h3>
+                        <p style="margin:0 0 15px;">
+                            <b x-text="residencyRejection.residency.name"></b> &mdash;
+                            <span x-text="formatDate(residencyRejection.residency.fromDate)"></span> &rarr;
+                            <span x-text="formatDate(residencyRejection.residency.toDate)"></span>
+                        </p>
+
+                        <label>Oggetto Email</label>
+                        <input type="text" x-model="residencyRejection.emailSubject">
+
+                        <label>Corpo Email</label>
+                        <textarea x-model="residencyRejection.emailBody" rows="6"></textarea>
+
+                        <button class="btn-blk" @click="confirmRejection()">RIFIUTA E INVIA</button>
+                        <button @click="residencyRejection = null"
                             style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer;">Annulla</button>
                     </div>
                 </div>

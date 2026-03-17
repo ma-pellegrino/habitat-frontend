@@ -366,7 +366,7 @@
                         birthPlace: this.form.luogoNascita,
                         birthProvince: this.form.provNascita,
                         birthCountry: this.form.paeseNascita,
-                        vatNumber: this.lang === 'it' ? this.form.codiceFiscale : '',
+                        vatNumber: this.lang === 'it' ? this.form.codiceFiscale : null,
                         address: this.form.indirizzo,
                         zipcode: this.form.cap,
                         city: this.form.cittaResidenza,
@@ -394,11 +394,19 @@
                             return;
                         }
 
-                        if (!res.ok) throw new Error(
-                            this.lang === 'it'
-                                ? "Errore durante l'invio dei dati."
-                                : "Error submitting the form."
-                        );
+                        if (!res.ok) {
+                            const data = await res.json().catch(() => null);
+                            if (data?.fields?.length) {
+                                throw new Error(
+                                    (data.error || (this.lang === 'it' ? 'Errore' : 'Error'))
+                                    + ': ' + data.fields.join(', ')
+                                );
+                            }
+                            throw new Error(
+                                data?.error
+                                || (this.lang === 'it' ? "Errore durante l'invio dei dati." : "Error submitting the form.")
+                            );
+                        }
 
                         this.submitted = true;
                     } catch (e) {

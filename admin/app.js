@@ -21,6 +21,7 @@ document.addEventListener('alpine:init', () => {
         membershipRequestCount: 0,
         membershipConfirmedCount: 0,
         residencyApproval: null,
+        residencyRejection: null,
         residencyCount: 0,
         membershipTab: 'requests',
         filter: 'all',
@@ -395,10 +396,16 @@ document.addEventListener('alpine:init', () => {
 
         async startResidencyApproval(r) {
             try {
-                const resB = await fetch(`${this.BASE_URL}/bookings/`, {
-                    headers: { 'Authorization': `Bearer ${this.token}` }
-                });
+                const [resB, resT] = await Promise.all([
+                    fetch(`${this.BASE_URL}/bookings/`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    }),
+                    fetch(`${this.BASE_URL}/residency/${r.id}/email-template?lang=${r.language || 'it'}`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    })
+                ]);
                 const allBookings = await resB.json();
+                const { subject: emailSubject, body: emailBody } = await resT.json();
                 const allRooms = ['ex poni', 'monolocale', 'camerata'];
                 const from = new Date(r.fromDate);
                 const to = new Date(r.toDate);
@@ -409,8 +416,6 @@ document.addEventListener('alpine:init', () => {
                         new Date(b.checkOut) > from
                     )
                 );
-                const emailSubject = `Conferma residenza - Habitat`;
-                const emailBody = `Ciao ${r.name},\n\nsiamo felici di comunicarti che la tua richiesta di residenza dal ${this.formatDate(r.fromDate)} al ${this.formatDate(r.toDate)} è stata approvata!\n\nA presto,\nHabitat`;
                 this.residencyApproval = { residency: r, room: '', emailSubject, emailBody, availableRooms };
             } catch (e) { alert(e.message); }
         },
@@ -425,6 +430,30 @@ document.addEventListener('alpine:init', () => {
                 });
                 if (!res.ok) throw new Error("Errore approvazione residenza");
                 this.residencyApproval = null;
+                await this.fetchData();
+            } catch (e) { alert(e.message); }
+        },
+
+        async startResidencyRejection(r) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/residency/${r.id}/email-template?lang=${r.language || 'it'}&type=rejection`, {
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                const { subject: emailSubject, body: emailBody } = await res.json();
+                this.residencyRejection = { residency: r, emailSubject, emailBody };
+            } catch (e) { alert(e.message); }
+        },
+
+        async confirmRejection() {
+            const { residency, emailSubject, emailBody } = this.residencyRejection;
+            try {
+                const res = await fetch(`${this.BASE_URL}/residency/${residency.id}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ emailSubject, emailBody })
+                });
+                if (!res.ok) throw new Error("Errore rifiuto residenza");
+                this.residencyRejection = null;
                 await this.fetchData();
             } catch (e) { alert(e.message); }
         },
