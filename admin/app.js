@@ -34,13 +34,17 @@ document.addEventListener('alpine:init', () => {
         usersList: [],
         editingUser: null,
 
+        // Calendar state
+        editingCalendarEvent: null,
+        calendarInstance: null,
+
         get canWrite() {
             return this.currentUser && this.currentUser.role === 'admin';
         },
 
         get visibleTabs() {
             if (!this.currentUser) return [];
-            const allTabs = ['expenses', 'guests', 'bookings', 'residency', 'membership'];
+            const allTabs = ['expenses', 'guests', 'bookings', 'residency', 'membership', 'calendar'];
             if (this.currentUser.role === 'admin') return [...allTabs, 'users'];
             if (this.currentUser.role === 'reader') return allTabs;
             // reader_limited
@@ -96,6 +100,7 @@ document.addEventListener('alpine:init', () => {
             this.editingResidency = null;
             this.editingGuest = null;
             this.editingUser = null;
+            this.editingCalendarEvent = null;
             this.confirmModal = null;
             await this.fetchData();
         },
@@ -105,6 +110,11 @@ document.addEventListener('alpine:init', () => {
             try {
                 if (this.view === 'users') {
                     await this.fetchUsers();
+                    return;
+                }
+
+                if (this.view === 'calendar') {
+                    this.$nextTick(() => this.initCalendar());
                     return;
                 }
 
@@ -485,6 +495,153 @@ document.addEventListener('alpine:init', () => {
                     await this.fetchData();
                 } catch (e) { alert(e.message); }
             }
+        },
+
+        // ── Calendar ──
+
+        initCalendar() {
+            const el = document.getElementById('fullcalendar');
+            if (!el) return;
+            if (this.calendarInstance) {
+                this.calendarInstance.destroy();
+                this.calendarInstance = null;
+            }
+            const self = this;
+            this.calendarInstance = new FullCalendar.Calendar(el, {
+                initialView: 'dayGridMonth',
+                locale: 'it',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                editable: false,
+                selectable: this.canWrite,
+                events: function(info, successCallback, failureCallback) {
+                    const start = info.startStr.split('T')[0];
+                    const end = info.endStr.split('T')[0];
+                    fetch(`${self.BASE_URL}/calendar/?start=${start}&end=${end}`, {
+                        headers: { 'Authorization': `Bearer ${self.token}` }
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Errore caricamento eventi');
+                        return res.json();
+                    })
+                    .then(events => {
+                        successCallback(events.map(ev => ({
+                            id: ev.uid,
+                            title: ev.summary || '',
+                            start: ev.dtstart,
+                            end: ev.dtend,
+                            allDay: ev.dtstart && ev.dtstart.length === 10,
+                            extendedProps: {
+                                description: ev.description || '',
+                                location: ev.location || '',
+                                uid: ev.uid
+                            }
+                        })));
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Errore caricamento calendario');
+                        failureCallback(err);
+                    });
+                },
+                select: function(info) {
+                    self.editingCalendarEvent = {
+                        summary: '',
+                        dtstart: info.startStr.split('T')[0],
+                        dtend: info.endStr.split('T')[0],
+                        description: '',
+                        location: '',
+                        allDay: true,
+                        uid: null
+                    };
+                },
+                eventClick: function(info) {
+                    const ev = info.event;
+                    const isAllDay = ev.allDay;
+                    let dtstart, dtend;
+                    if (isAllDay) {
+                        dtstart = ev.startStr;
+                        dtend = ev.endStr || ev.startStr;
+                    } else {
+                        dtstart = ev.startStr.slice(0, 16);
+                        dtend = ev.endStr ? ev.endStr.slice(0, 16) : dtstart;
+                    }
+                    self.editingCalendarEvent = {
+                        uid: ev.id,
+                        summary: ev.title,
+                        dtstart,
+                        dtend,
+                        description: ev.extendedProps.description || '',
+                        location: ev.extendedProps.location || '',
+                        allDay: isAllDay
+                    };
+                }
+            });
+            this.calendarInstance.render();
+        },
+
+        openCreateCalendarEvent() {
+            const today = new Date().toISOString().split('T')[0];
+            this.editingCalendarEvent = {
+                summary: '',
+                dtstart: today,
+                dtend: today,
+                description: '',
+                location: '',
+                allDay: true,
+                uid: null
+            };
+        },
+
+        async saveCalendarEvent() {
+            try {
+                const ev = this.editingCalendarEvent;
+                if (!ev.summary || !ev.dtstart) {
+                    alert('Titolo e data inizio sono obbligatori');
+                    return;
+                }
+                const payload = {
+                    summary: ev.summary,
+                    dtstart: ev.dtstart,
+                    dtend: ev.dtend || ev.dtstart,
+                    description: ev.description,
+                    location: ev.location
+                };
+                const isUpdate = !!ev.uid;
+                const url = isUpdate
+                    ? `${this.BASE_URL}/calendar/${encodeURIComponent(ev.uid)}`
+                    : `${this.BASE_URL}/calendar/`;
+                const res = await fetch(url, {
+                    method: isUpdate ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Errore salvataggio evento');
+                }
+                this.editingCalendarEvent = null;
+                if (this.calendarInstance) this.calendarInstance.refetchEvents();
+            } catch (e) { alert(e.message); }
+        },
+
+        async deleteCalendarEvent(uid) {
+            if (!await this.showConfirm('Eliminare questo evento?')) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/calendar/${encodeURIComponent(uid)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Errore eliminazione evento');
+                }
+                this.editingCalendarEvent = null;
+                if (this.calendarInstance) this.calendarInstance.refetchEvents();
+            } catch (e) { alert(e.message); }
         },
 
         // ── User Management ──
