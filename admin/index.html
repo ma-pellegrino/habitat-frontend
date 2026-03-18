@@ -649,6 +649,7 @@
                                     <th>Email</th>
                                     <th>Dal</th>
                                     <th>Al</th>
+                                    <th>Esito</th>
                                     <th>Eliminato il</th>
                                     <th></th>
                                 </tr>
@@ -657,9 +658,14 @@
                                 <template x-for="r in deletedResidencies" :key="r.id">
                                     <tr>
                                         <td x-text="r.name"></td>
-                                        <td x-text="r.email"></td>
+                                        <td x-text="r.email || '-'"></td>
                                         <td x-text="formatDate(r.fromDate)"></td>
                                         <td x-text="formatDate(r.toDate)"></td>
+                                        <td>
+                                            <span x-show="r.status === 'approved'" class="status-tag" style="color:green; border-color:green;">APPROVATA</span>
+                                            <span x-show="r.status === 'rejected'" class="status-tag" style="color:red; border-color:red;">RIFIUTATA</span>
+                                            <span x-show="r.status === 'pending' || !r.status" class="status-tag" style="color:#999; border-color:#999;">ELIMINATA</span>
+                                        </td>
                                         <td x-text="formatDate(r.deletedAt)"></td>
                                         <td>
                                             <button x-show="canWrite" @click="restoreResidency(r)" class="btn-del" style="color:green" title="Ripristina">&#x21A9;</button>
