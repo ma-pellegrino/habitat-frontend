@@ -271,7 +271,7 @@
                         <option value="CashHabitat">HABITAT >> CONTANTI / CASH</option>
                     </template>
                     <template x-if="form.interessi.includes('Habitat - Cà De Monti')">
-                        <option value="HabitatPaypal">HABITAT >> PAYPAL</option>
+                        <option value="HabitatPaypal">HABITAT >> PAYPAL / APPLE PAY / CARD</option>
                     </template>
                     <template x-if="form.interessi.includes('Habitat - Cà De Monti')">
                         <option value="HabitatIban">HABITAT >> IBAN</option>
@@ -280,7 +280,7 @@
                         <option value="CashDistrettoA">DISTRETTO A >> CONTANTI / CASH</option>
                     </template>
                     <template x-if="form.interessi.some(i => ['Distretto A', 'Dawe - Cena Itinerante', 'Quazar - Coworking'].includes(i))">
-                        <option value="DistrettoPaypal">DISTRETTO A >> PAYPAL</option>
+                        <option value="DistrettoPaypal">DISTRETTO A >> PAYPAL / APPLE PAY / CARD</option>
                     </template>
                     <template x-if="form.interessi.some(i => ['Distretto A', 'Dawe - Cena Itinerante', 'Quazar - Coworking'].includes(i))">
                         <option value="DistrettoIban">DISTRETTO A >> IBAN</option>
@@ -324,6 +324,9 @@
                             <a href="https://www.paypal.com/ncp/payment/5E4P5CFASVLMA" target="_blank"
                                 style="display:inline-block; margin-top:8px; background:#000; color:#fff; padding:10px 20px; text-decoration:none; font-weight:bold;"
                                 x-text="lang === 'it' ? 'PAGA CON PAYPAL' : 'PAY WITH PAYPAL'"></a>
+                            <p style="font-size:0.8em; color:#666; margin-top:8px;" x-text="lang === 'it'
+                                ? 'Puoi pagare anche con Apple Pay e Carta'
+                                : 'You can also pay with Apple Pay and Card'"></p>
                         </div>
                     </template>
                     <template x-if="form.metodoPagamento === 'CashHabitat'">
