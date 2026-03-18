@@ -303,7 +303,8 @@ document.addEventListener('alpine:init', () => {
                     booking,
                     invoice,
                     paymentMethod: 'cash',
-                    guestName: booking?.guest?.name || this.selectedGuest?.name || 'Ospite'
+                    guestName: booking?.guest?.name || this.selectedGuest?.name || 'Ospite',
+                    customAmount: invoice.totalAmount || 0
                 };
             } catch (e) { alert(e.message); }
         },
@@ -314,7 +315,7 @@ document.addEventListener('alpine:init', () => {
                 const res = await fetch(`${this.BASE_URL}/bookings/${this.checkoutModal.booking.id}/checkout`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ paymentMethod: this.checkoutModal.paymentMethod })
+                    body: JSON.stringify({ paymentMethod: this.checkoutModal.paymentMethod, totalAmount: this.checkoutModal.customAmount })
                 });
                 if (!res.ok) {
                     const err = await res.json();

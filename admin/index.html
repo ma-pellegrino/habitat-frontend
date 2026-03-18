@@ -1168,10 +1168,20 @@
                                 <span>Vitto:</span>
                                 <b x-text="'€' + (checkoutModal.invoice.foodAmount || 0).toFixed(2)"></b>
                             </div>
-                            <div style="border-top:1px solid #000; margin-top:8px; padding-top:8px; display:flex; justify-content:space-between;">
+                            <div style="border-top:1px solid #000; margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
                                 <strong>TOTALE:</strong>
-                                <strong x-text="'€' + (checkoutModal.invoice.totalAmount || 0).toFixed(2)"></strong>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span>€</span>
+                                    <input type="number" step="0.01" min="0"
+                                        x-model.number="checkoutModal.customAmount"
+                                        style="width:90px; font-weight:bold; font-size:14px; text-align:right; border:1px solid #ccc; padding:4px 6px;">
+                                </div>
                             </div>
+                            <template x-if="checkoutModal.customAmount != checkoutModal.invoice.totalAmount">
+                                <div style="margin-top:6px; font-size:11px; color:#888; text-align:right;">
+                                    Importo originale: €<span x-text="(checkoutModal.invoice.totalAmount || 0).toFixed(2)"></span>
+                                </div>
+                            </template>
                         </div>
 
                         <label style="margin-top:15px;">Metodo di pagamento</label>

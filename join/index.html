@@ -291,14 +291,24 @@
                         </div>
                     </template>
                     <template x-if="form.metodoPagamento === 'HabitatPaypal'">
-                        <p x-text="lang === 'it'
-                            ? 'Invia il pagamento tramite PayPal a Habitat'
-                            : 'Send payment via PayPal to Habitat'"></p>
+                        <div>
+                            <p x-text="lang === 'it'
+                                ? 'Invia il pagamento tramite PayPal a Habitat'
+                                : 'Send payment via PayPal to Habitat'"></p>
+                            <a href="https://www.paypal.com/ncp/payment/5E4P5CFASVLMA" target="_blank"
+                                style="display:inline-block; margin-top:8px; background:#000; color:#fff; padding:10px 20px; text-decoration:none; font-weight:bold;"
+                                x-text="lang === 'it' ? 'PAGA CON PAYPAL' : 'PAY WITH PAYPAL'"></a>
+                        </div>
                     </template>
                     <template x-if="form.metodoPagamento === 'DistrettoPaypal'">
-                        <p x-text="lang === 'it'
-                            ? 'Invia il pagamento tramite PayPal a Distretto A'
-                            : 'Send payment via PayPal to Distretto A'"></p>
+                        <div>
+                            <p x-text="lang === 'it'
+                                ? 'Invia il pagamento tramite PayPal a Distretto A'
+                                : 'Send payment via PayPal to Distretto A'"></p>
+                            <a href="https://www.paypal.com/ncp/payment/5E4P5CFASVLMA" target="_blank"
+                                style="display:inline-block; margin-top:8px; background:#000; color:#fff; padding:10px 20px; text-decoration:none; font-weight:bold;"
+                                x-text="lang === 'it' ? 'PAGA CON PAYPAL' : 'PAY WITH PAYPAL'"></a>
+                        </div>
                     </template>
                     <template x-if="form.metodoPagamento === 'Cash'">
                         <p x-text="lang === 'it'
