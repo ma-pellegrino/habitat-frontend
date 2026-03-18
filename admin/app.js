@@ -22,6 +22,8 @@ document.addEventListener('alpine:init', () => {
         deletedResidencies: [],
         membershipRequestCount: 0,
         membershipConfirmedCount: 0,
+        checkoutModal: null,
+        proposalModal: null,
         residencyApproval: null,
         residencyRejection: null,
         residencyCount: 0,
@@ -270,6 +272,68 @@ document.addEventListener('alpine:init', () => {
                 const allB = await res.json();
                 this.guestHistory = allB.filter(b => (b.guest?.id || b.guest) === guest.id);
             } catch (e) { alert(e.message); }
+        },
+
+        async checkinGuest(bookingId) {
+            if (!await this.showConfirm("Confermare il CHECK-IN?")) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/bookings/${bookingId}/checkin`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || "Errore check-in");
+                }
+                if (this.selectedGuest) await this.selectGuest(this.selectedGuest);
+                await this.fetchData();
+            } catch (e) { alert(e.message); }
+        },
+
+        async openCheckout(bookingId) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/bookings/${bookingId}/invoice`, {
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) throw new Error("Errore caricamento invoice");
+                const invoice = await res.json();
+                const booking = this.guestHistory.find(b => b.id === bookingId)
+                             || this.items.find(b => b.id === bookingId);
+                this.checkoutModal = {
+                    booking,
+                    invoice,
+                    paymentMethod: 'cash',
+                    guestName: booking?.guest?.name || this.selectedGuest?.name || 'Ospite'
+                };
+            } catch (e) { alert(e.message); }
+        },
+
+        async confirmCheckout() {
+            if (!this.checkoutModal) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/bookings/${this.checkoutModal.booking.id}/checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ paymentMethod: this.checkoutModal.paymentMethod })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || "Errore checkout");
+                }
+                this.checkoutModal = null;
+                if (this.selectedGuest) await this.selectGuest(this.selectedGuest);
+                await this.fetchData();
+            } catch (e) { alert(e.message); }
+        },
+
+        getGuestStatusLabel(status) {
+            const labels = { standby: 'In attesa', in_progress: 'In corso', checkout: 'Check-out completato' };
+            return labels[status] || status;
+        },
+
+        getGuestStatusColor(status) {
+            const colors = { standby: '#999', in_progress: '#2c7a7b', checkout: 'green' };
+            return colors[status] || '#000';
         },
 
         isGuestPresent(guestId) {
