@@ -908,6 +908,7 @@
                                             <span x-show="c.notifyDigest" class="tab-chip">Digest</span>
                                             <span x-show="c.notifyResidency" class="tab-chip">Residenze</span>
                                             <span x-show="c.notifyMembership" class="tab-chip">Tessere</span>
+                                            <span x-show="c.notifyFestival" class="tab-chip">Festival</span>
                                         </td>
                                         <td>
                                             <button @click="deleteChat(c.id)" class="btn-del">X</button>
@@ -1198,9 +1199,13 @@
                                 <input type="checkbox" x-model="editingChat.notifyResidency" style="width:auto">
                                 Nuove residenze
                             </label>
-                            <label style="display:block; font-weight:normal;">
+                            <label style="display:block; font-weight:normal; margin-bottom:5px;">
                                 <input type="checkbox" x-model="editingChat.notifyMembership" style="width:auto">
                                 Nuove tessere
+                            </label>
+                            <label style="display:block; font-weight:normal;">
+                                <input type="checkbox" x-model="editingChat.notifyFestival" style="width:auto">
+                                Prenotazioni festival
                             </label>
                         </div>
                     </div>

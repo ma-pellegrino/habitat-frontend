@@ -989,7 +989,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         openAddChat() {
-            this.editingChat = { chatId: '', label: '', active: true, notifyDigest: true, notifyResidency: true, notifyMembership: true };
+            this.editingChat = { chatId: '', label: '', active: true, notifyDigest: true, notifyResidency: true, notifyMembership: true, notifyFestival: true };
         },
 
         openEditChat(chat) {
