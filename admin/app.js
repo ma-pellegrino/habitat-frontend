@@ -177,6 +177,67 @@ document.addEventListener('alpine:init', () => {
             return new Set(validTransactions.map(tx => tx.email.toLowerCase().trim()));
         },
 
+        // Festival revenue calculations
+        get festivalTotalRevenue() {
+            if (!Array.isArray(this.festivalTickets)) return 0;
+            return this.festivalTickets.reduce((sum, t) =>
+                sum + (t.quantity || 1) * (t.price || 55.0), 0
+            );
+        },
+
+        get festivalConfirmedRevenue() {
+            if (!Array.isArray(this.festivalTickets)) return 0;
+            return this.festivalTickets
+                .filter(t => t.confirmed)
+                .reduce((sum, t) => sum + (t.quantity || 1) * (t.price || 55.0), 0);
+        },
+
+        get festivalPendingRevenue() {
+            return this.festivalTotalRevenue - this.festivalConfirmedRevenue;
+        },
+
+        get festivalRevenueByPrice() {
+            if (!Array.isArray(this.festivalTickets)) return [];
+
+            const grouped = {};
+            this.festivalTickets.forEach(t => {
+                const price = t.price || 55.0;
+                const category = t.priceCategory || `€${price}`;
+
+                if (!grouped[category]) {
+                    grouped[category] = {
+                        category,
+                        price,
+                        count: 0,
+                        revenue: 0,
+                        confirmedCount: 0,
+                        confirmedRevenue: 0
+                    };
+                }
+
+                const qty = t.quantity || 1;
+                grouped[category].count += qty;
+                grouped[category].revenue += qty * price;
+
+                if (t.confirmed) {
+                    grouped[category].confirmedCount += qty;
+                    grouped[category].confirmedRevenue += qty * price;
+                }
+            });
+
+            // Sort by price (ascending)
+            return Object.values(grouped).sort((a, b) => a.price - b.price);
+        },
+
+        formatCurrency(amount) {
+            return new Intl.NumberFormat('it-IT', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        },
+
         async init() {
             if (this.token) {
                 const ok = await this.fetchCurrentUser();

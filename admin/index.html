@@ -1479,6 +1479,68 @@
                                    style="color:green"></b>
                             </div>
                         </div>
+
+                        <!-- Revenue Statistics -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px; text-align: center;">
+                            <div class="card" style="flex:1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <small style="opacity: 0.9;">FATTURATO TOTALE</small><br>
+                                <b x-text="formatCurrency(festivalTotalRevenue)" style="font-size:1.4em"></b>
+                            </div>
+                            <div class="card" style="flex:1; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                                <small style="opacity: 0.9;">CONFERMATO</small><br>
+                                <b x-text="formatCurrency(festivalConfirmedRevenue)" style="font-size:1.4em"></b>
+                            </div>
+                            <div class="card" style="flex:1; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                                <small style="opacity: 0.9;">IN ATTESA</small><br>
+                                <b x-text="formatCurrency(festivalPendingRevenue)" style="font-size:1.4em"></b>
+                            </div>
+                        </div>
+
+                        <!-- Revenue Breakdown by Price Tier -->
+                        <div class="card" style="margin-bottom: 20px;" x-show="festivalRevenueByPrice.length > 0">
+                            <h3 style="margin: 0 0 15px 0; font-size: 1em; color: #555;">📊 Breakdown per Fascia di Prezzo</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                                        <th style="padding: 10px; font-weight: 600;">Fascia</th>
+                                        <th style="padding: 10px; text-align: right; font-weight: 600;">Biglietti</th>
+                                        <th style="padding: 10px; text-align: right; font-weight: 600;">Fatturato</th>
+                                        <th style="padding: 10px; text-align: right; font-weight: 600;">Confermati</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="tier in festivalRevenueByPrice" :key="tier.category">
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 10px;">
+                                                <span x-text="tier.category.replace('_', ' ').toUpperCase()"
+                                                      style="font-weight: 500;"></span>
+                                                <span x-text="' (€' + tier.price + ')'"
+                                                      style="color: #888; font-size: 0.85em;"></span>
+                                            </td>
+                                            <td style="padding: 10px; text-align: right;">
+                                                <span x-text="tier.count" style="font-weight: 500;"></span>
+                                                <span style="color: #28a745; margin-left: 8px; font-size: 0.9em;"
+                                                      x-text="'(' + tier.confirmedCount + ' ✓)'"></span>
+                                            </td>
+                                            <td style="padding: 10px; text-align: right; font-weight: 500;"
+                                                x-text="formatCurrency(tier.revenue)"></td>
+                                            <td style="padding: 10px; text-align: right; color: #28a745; font-weight: 500;"
+                                                x-text="formatCurrency(tier.confirmedRevenue)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot>
+                                    <tr style="border-top: 2px solid #333; font-weight: 600; background: #f8f9fa;">
+                                        <td style="padding: 12px;">TOTALE</td>
+                                        <td style="padding: 12px; text-align: right;" x-text="festivalTicketCount"></td>
+                                        <td style="padding: 12px; text-align: right;" x-text="formatCurrency(festivalTotalRevenue)"></td>
+                                        <td style="padding: 12px; text-align: right; color: #28a745;"
+                                            x-text="formatCurrency(festivalConfirmedRevenue)"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
                         <div class="card">
                             <h3 style="margin:0 0 15px">In Attesa <span style="font-weight:normal; font-size:12px;" x-text="'(' + festivalTickets.filter(t => !t.confirmed).reduce((sum, t) => sum + (t.quantity || 1), 0) + ' biglietti, ' + festivalTickets.filter(t => !t.confirmed).length + ' prenotazioni)'"></span></h3>
 
@@ -2939,6 +3001,26 @@
                                 <small style="color:#666; font-size:12px;">
                                     Per pagamenti IBAN multipli (es. una persona paga per 2 biglietti)
                                 </small>
+                            </div>
+
+                            <!-- Price -->
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Prezzo (€)</label>
+                                <input type="number" x-model.number="editingFestivalTicket.price"
+                                    step="0.01" min="0"
+                                    style="width:100%; padding:8px; border:1px solid #ddd;">
+                            </div>
+
+                            <!-- Price Category -->
+                            <div>
+                                <label style="display:block; margin-bottom:5px; font-weight:bold;">Fascia di Prezzo</label>
+                                <select x-model="editingFestivalTicket.priceCategory"
+                                    style="width:100%; padding:8px; border:1px solid #ddd;">
+                                    <option value="1st_round">1st Round</option>
+                                    <option value="2nd_round">2nd Round</option>
+                                    <option value="late">Late</option>
+                                    <option value="special">Special</option>
+                                </select>
                             </div>
 
                             <!-- Notes -->
