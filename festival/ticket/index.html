@@ -540,9 +540,15 @@
                     document.getElementById('paymentMethodSection').style.display = 'none';
                     document.getElementById('membershipNote').style.display = 'none';
 
-                    inviteStatus.innerHTML = `<p style="color:green; font-weight:bold; text-align:center;">✓ Complimentary Invite<br><small>(${data.remainingUses} uses remaining)</small></p>`;
+                    const giftMsg = currentLang === 'it'
+                        ? `✓ Invito Omaggio<br><small>(${data.remainingUses} usi rimanenti)</small>`
+                        : `✓ Gift Invite<br><small>(${data.remainingUses} uses remaining)</small>`;
+                    inviteStatus.innerHTML = `<p style="color:green; font-weight:bold; text-align:center;">${giftMsg}</p>`;
                 } else {
-                    inviteStatus.innerHTML = `<p style="color:green; font-weight:bold; text-align:center;">✓ Valid invite (${data.remainingUses} uses remaining)</p>`;
+                    const validMsg = currentLang === 'it'
+                        ? `✓ Invito valido (${data.remainingUses} usi rimanenti)`
+                        : `✓ Valid invite (${data.remainingUses} uses remaining)`;
+                    inviteStatus.innerHTML = `<p style="color:green; font-weight:bold; text-align:center;">${validMsg}</p>`;
                 }
                 inviteStatus.style.borderColor = 'green';
             })
