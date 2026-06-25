@@ -216,16 +216,16 @@ document.addEventListener('alpine:init', () => {
         // Festival revenue calculations
         get festivalTotalRevenue() {
             if (!Array.isArray(this.festivalTickets)) return 0;
-            return this.festivalTickets.reduce((sum, t) =>
-                sum + (t.quantity || 1) * (t.price || 55.0), 0
-            );
+            return this.festivalTickets
+                .filter(t => t.priceCategory !== 'gift')
+                .reduce((sum, t) => sum + (t.quantity || 1) * (t.price ?? 55.0), 0);
         },
 
         get festivalConfirmedRevenue() {
             if (!Array.isArray(this.festivalTickets)) return 0;
             return this.festivalTickets
-                .filter(t => t.confirmed)
-                .reduce((sum, t) => sum + (t.quantity || 1) * (t.price || 55.0), 0);
+                .filter(t => t.confirmed && t.priceCategory !== 'gift')
+                .reduce((sum, t) => sum + (t.quantity || 1) * (t.price ?? 55.0), 0);
         },
 
         get festivalPendingRevenue() {
@@ -237,7 +237,7 @@ document.addEventListener('alpine:init', () => {
 
             const grouped = {};
             this.festivalTickets.forEach(t => {
-                const price = t.price || 55.0;
+                const price = t.price ?? 55.0;
                 const category = t.priceCategory || `€${price}`;
 
                 if (!grouped[category]) {
