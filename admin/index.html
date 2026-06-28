@@ -1747,6 +1747,8 @@
                             @click="switchFestivalTab('volunteers')">Volontari</button>
                         <button :class="festivalTab === 'timeline' && 'active'"
                             @click="switchFestivalTab('timeline')">Timeline</button>
+                        <button :class="festivalTab === 'dinner' && 'active'"
+                            @click="switchFestivalTab('dinner')">Cena <span x-show="dinnerCount > 0" x-text="'(' + dinnerCount + ')'"></span></button>
                     </div>
 
                     <div x-show="festivalTab === 'tickets'">
@@ -2329,6 +2331,40 @@
                                             </td>
                                         </tr>
                                     </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div x-show="festivalTab === 'dinner'">
+                        <div class="card">
+                            <h3 style="margin:0 0 15px">Cena venerdì 17 luglio
+                                <span style="font-weight:normal; font-size:12px;"
+                                      x-text="'(' + dinnerParticipants.length + ' prenotazioni)'"></span>
+                            </h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Cognome</th>
+                                        <th>Email</th>
+                                        <th>Intolleranze</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="d in dinnerParticipants" :key="d.id">
+                                        <tr>
+                                            <td x-text="d.name"></td>
+                                            <td x-text="d.surname"></td>
+                                            <td x-text="d.email"></td>
+                                            <td x-text="d.notes || '—'"></td>
+                                            <td x-text="new Date(d.createdAt).toLocaleDateString('it-IT')"></td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="dinnerParticipants.length === 0">
+                                        <td colspan="5" style="color:#999; text-align:center; padding:20px;">Nessuna prenotazione</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>

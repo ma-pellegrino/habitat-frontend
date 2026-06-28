@@ -45,6 +45,8 @@ document.addEventListener('alpine:init', () => {
         showVenueManager: false,
         newVenueName: '',
         volunteers: [],
+        dinnerParticipants: [],
+        dinnerCount: 0,
         editingVolunteer: null,
         timelineDeadlines: [],
         editingDeadline: null,
@@ -410,6 +412,9 @@ document.addEventListener('alpine:init', () => {
                     }
                     if (this.festivalTab === 'timeline') {
                         await this.fetchTimeline();
+                    }
+                    if (this.festivalTab === 'dinner') {
+                        await this.fetchDinners();
                     }
                     this.items = [];
                 } else {
@@ -1662,6 +1667,9 @@ document.addEventListener('alpine:init', () => {
             if (tab === 'invites') {
                 await this.loadFestivalInvites();
             }
+            if (tab === 'dinner') {
+                await this.fetchDinners();
+            }
         },
 
         async fetchTimeline() {
@@ -1671,6 +1679,17 @@ document.addEventListener('alpine:init', () => {
                 });
                 if (res.status === 401) return this.logout();
                 this.timelineDeadlines = await res.json();
+            } catch (e) { console.error(e); }
+        },
+
+        async fetchDinners() {
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival-dinner`, {
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (res.status === 401) return this.logout();
+                this.dinnerParticipants = await res.json();
+                this.dinnerCount = this.dinnerParticipants.length;
             } catch (e) { console.error(e); }
         },
 

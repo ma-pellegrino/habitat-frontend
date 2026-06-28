@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="../5.svg">
+    <title>Cena Festival - Habitat</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="../config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: #fff;
+            padding: 40px;
+            border: 2px solid #000;
+            box-shadow: 8px 8px 0px #000;
+            max-width: 680px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .lang-toggle {
+            display: flex;
+            border: 2px solid #000;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75em;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .lang-toggle button {
+            padding: 4px 8px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: inherit;
+        }
+
+        .lang-toggle button.active {
+            background: #000;
+            color: #fff;
+        }
+
+        h1 {
+            border-bottom: 4px solid #000;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            font-size: 1.6em;
+            letter-spacing: 2px;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+            text-transform: uppercase;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 2px solid #000;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1rem;
+            border-radius: 0;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: auto;
+            margin-top: 3px;
+            accent-color: #000;
+            flex-shrink: 0;
+        }
+
+        .checkbox-row label {
+            margin-top: 0;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .notes-box {
+            margin-top: 12px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background: #333;
+        }
+
+        button[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            margin-top: 16px;
+            padding: 12px;
+            border: 2px solid #c00;
+            color: #c00;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .success-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .success-section h2 {
+            font-size: 1.4em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .success-section p {
+            font-size: 0.9em;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .field-error {
+            border-color: #c00 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div x-data="dinnerForm()" x-cloak>
+        <div class="card">
+
+            <!-- Success state -->
+            <div x-show="success" class="success-section">
+                <h2 x-text="lang === 'it' ? '✓ Prenotazione confermata!' : '✓ Booking confirmed!'"></h2>
+                <p
+                    x-text="lang === 'it'
+                ? 'Sei registrato/a alla cena di venerdì 17 luglio. Riceverai una email di conferma a breve.'
+                : 'You are registered for the dinner on Friday July 17th. You will receive a confirmation email shortly.'">
+                </p>
+            </div>
+
+            <!-- Form state -->
+            <div x-show="!success">
+                <div class="card-header">
+                    <div></div>
+                    <div class="lang-toggle">
+                        <button :class="lang === 'it' && 'active'" @click="lang = 'it'">IT</button>
+                        <button :class="lang === 'en' && 'active'" @click="lang = 'en'">EN</button>
+                    </div>
+                </div>
+
+                <h1 x-text="lang === 'it' ? 'Cena festival' : 'Festival dinner'"></h1>
+
+                <p style="font-size:0.85em; color:#444; margin-bottom:8px;"
+                    x-text="lang === 'it'
+                ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+                : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'">
+                </p>
+
+                <form @submit.prevent="submit">
+                    <label x-text="lang === 'it' ? 'Nome *' : 'First name *'"></label>
+                    <input type="text" x-model="form.name" :class="fieldError('name') && 'field-error'" required>
+
+                    <label x-text="lang === 'it' ? 'Cognome *' : 'Last name *'"></label>
+                    <input type="text" x-model="form.surname" :class="fieldError('surname') && 'field-error'" required>
+
+                    <label x-text="lang === 'it' ? 'Email *' : 'Email *'"></label>
+                    <input type="email" x-model="form.email" :class="fieldError('email') && 'field-error'" required>
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="intolerances" x-model="form.hasIntolerances">
+                        <label for="intolerances"
+                            x-text="lang === 'it' ? 'Ho intolleranze alimentari' : 'I have food intolerances'">
+                        </label>
+                    </div>
+
+                    <div class="notes-box" x-show="form.hasIntolerances" x-transition>
+                        <label x-text="lang === 'it' ? 'Note intolleranze' : 'Intolerance details'"></label>
+                        <textarea x-model="form.notes" rows="3"></textarea>
+                </div>
+
+                <div class="error-msg" x-show="errorMsg" x-text="errorMsg"></div>
+
+                <button type="submit" :disabled="loading"
+                        x-text="loading
+                            ? (lang === 'it' ? 'Invio...' : 'Sending...')
+                            : (lang === 'it' ? 'Prenota' : 'Register')">
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function dinnerForm() {
+        return {
+            lang: 'it',
+            success: false,
+            loading: false,
+            errorMsg: '',
+            errorFields: [],
+            form: {
+                name: '',
+                surname: '',
+                email: '',
+                hasIntolerances: false,
+                notes: '',
+            },
+
+            fieldError(f) {
+                return this.errorFields.includes(f);
+            },
+
+            async submit() {
+                this.errorMsg = '';
+                this.errorFields = [];
+                this.loading = true;
+                try {
+                    const body = {
+                        name: this.form.name.trim(),
+                        surname: this.form.surname.trim(),
+                        email: this.form.email.trim(),
+                        notes: this.form.hasIntolerances ? this.form.notes.trim() : null,
+                        language: this.lang,
+                    };
+                    const res = await fetch(`${BASE_URL}/festival-dinner`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+                    if (res.status === 409) {
+                        this.errorFields = ['email'];
+                        this.errorMsg = this.lang === 'it'
+                            ? 'Sei già iscritto/a alla cena con questa email.'
+                            : 'You are already registered for the dinner with this email.';
+                        return;
+                    }
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        this.errorFields = data.fields || [];
+                        this.errorMsg = this.lang === 'it'
+                            ? 'Si è verificato un errore. Riprova.'
+                            : 'An error occurred. Please try again.';
+                        return;
+                    }
+                    this.success = true;
+                } catch (e) {
+                    this.errorMsg = this.lang === 'it'
+                        ? 'Errore di rete. Riprova.'
+                        : 'Network error. Please try again.';
+                } finally {
+                    this.loading = false;
+                }
+            },
+        };
+    }
+</script>
+</body>
+</html>
