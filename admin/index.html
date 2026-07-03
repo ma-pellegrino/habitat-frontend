@@ -1749,6 +1749,8 @@
                             @click="switchFestivalTab('timeline')">Timeline</button>
                         <button :class="festivalTab === 'dinner' && 'active'"
                             @click="switchFestivalTab('dinner')">Cena <span x-show="dinnerCount > 0" x-text="'(' + dinnerCount + ')'"></span></button>
+                        <button :class="festivalTab === 'checkin' && 'active'"
+                            @click="switchFestivalTab('checkin')">Check-in</button>
                     </div>
 
                     <div x-show="festivalTab === 'tickets'">
@@ -1761,6 +1763,14 @@
                                 <small>CON PAGAMENTO</small><br>
                                 <b x-text="festivalTickets.filter(t => !t.confirmed && hasPaypalMatch(t)).reduce((sum, t) => sum + (t.quantity || 1), 0)"
                                    style="color:green"></b>
+                            </div>
+                            <div class="card" style="flex:1">
+                                <small>TESSERATI</small><br>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && isMember(t.email)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:green"></b>
+                            </div>
+                            <div class="card" style="flex:1">
+                                <small>NON TESSERATI</small><br>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && !isMember(t.email)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:#c00"></b>
                             </div>
                         </div>
 
@@ -1854,6 +1864,10 @@
                                                 <span x-show="hasPaypalMatch(t)"
                                                       style="color: green; margin-left: 8px;"
                                                       title="Pagamento PayPal ricevuto">✓</span>
+                                                <span x-show="isMember(t.email)"
+                                                      style="margin-left:8px; padding:2px 6px; background:#fef3c7; color:#92400e; border:1px solid #fbbf24; border-radius:3px; font-size:10px; text-transform:uppercase; font-weight:bold;">
+                                                    MEMBER
+                                                </span>
                                             </td>
                                             <td x-text="t.paymentMethod" style="text-transform:uppercase;"></td>
                                             <td x-text="t.quantity || 1"></td>
@@ -1887,7 +1901,13 @@
                                         <tr>
                                             <td x-text="t.name"></td>
                                             <td x-text="t.surname"></td>
-                                            <td x-text="t.email"></td>
+                                            <td>
+                                                <span x-text="t.email"></span>
+                                                <span x-show="isMember(t.email)"
+                                                      style="margin-left:8px; padding:2px 6px; background:#fef3c7; color:#92400e; border:1px solid #fbbf24; border-radius:3px; font-size:10px; text-transform:uppercase; font-weight:bold;">
+                                                    MEMBER
+                                                </span>
+                                            </td>
                                             <td x-text="t.paymentMethod" style="text-transform:uppercase;"></td>
                                             <td x-text="t.quantity || 1"></td>
                                             <td x-show="canWrite">
@@ -2368,6 +2388,64 @@
                                     </template>
                                     <tr x-show="dinnerParticipants.length === 0">
                                         <td colspan="6" style="color:#999; text-align:center; padding:20px;">Nessuna prenotazione</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div x-show="festivalTab === 'checkin'">
+                        <div class="card">
+                            <h3 style="margin:0 0 15px">Check-in — biglietti confermati</h3>
+                            <input type="text" x-model="checkinSearch"
+                                   placeholder="Cerca per nome, cognome o email..."
+                                   style="width:100%; padding:8px; border:1px solid #000; font-family:inherit; margin-bottom:15px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Cognome</th>
+                                        <th>Email</th>
+                                        <th>Tessera</th>
+                                        <th>Entrato</th>
+                                        <th x-show="canWrite"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="t in festivalTickets.filter(t =>
+                                        t.confirmed &&
+                                        (checkinSearch === '' ||
+                                         t.name.toLowerCase().includes(checkinSearch.toLowerCase()) ||
+                                         t.surname.toLowerCase().includes(checkinSearch.toLowerCase()) ||
+                                         t.email.toLowerCase().includes(checkinSearch.toLowerCase()))
+                                    )" :key="t.id">
+                                        <tr :style="t.checkedInAt ? 'background:rgba(0,200,0,0.08)' : ''">
+                                            <td x-text="t.name"></td>
+                                            <td x-text="t.surname"></td>
+                                            <td x-text="t.email"></td>
+                                            <td>
+                                                <span x-show="isMember(t.email)"
+                                                      style="padding:2px 6px; background:#fef3c7; color:#92400e; border:1px solid #fbbf24; border-radius:3px; font-size:10px; font-weight:bold;">
+                                                    MEMBER
+                                                </span>
+                                                <span x-show="!isMember(t.email)" style="color:#999; font-size:12px;">—</span>
+                                            </td>
+                                            <td>
+                                                <span x-show="t.checkedInAt" style="color:green; font-weight:bold;"
+                                                      x-text="'✓ ' + new Date(t.checkedInAt).toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})">
+                                                </span>
+                                                <span x-show="!t.checkedInAt" style="color:#999; font-size:12px;">—</span>
+                                            </td>
+                                            <td x-show="canWrite">
+                                                <button x-show="!t.checkedInAt"
+                                                        @click="checkinTicket(t.id)"
+                                                        style="padding:3px 8px; background:#000; color:#fff; border:none; cursor:pointer; font-family:inherit; font-size:11px;">
+                                                    Segna entrato
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="festivalTickets.filter(t => t.confirmed).length === 0">
+                                        <td colspan="6" style="color:#999; text-align:center; padding:20px;">Nessun biglietto confermato</td>
                                     </tr>
                                 </tbody>
                             </table>

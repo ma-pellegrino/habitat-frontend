@@ -25,6 +25,8 @@ document.addEventListener('alpine:init', () => {
         festivalTickets: [],
         festivalTicketCount: 0,
         festivalConfirmedCount: 0,
+        confirmedMemberEmails: [],
+        checkinSearch: '',
         festivalApproval: null,
         editingFestivalTicket: null,
         festivalTab: 'tickets',
@@ -395,13 +397,18 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 if (this.view === 'festival') {
-                    const [ticketsRes, binRes] = await Promise.all([
+                    const [ticketsRes, binRes, membershipsRes] = await Promise.all([
                         fetch(`${this.BASE_URL}/festival/`, { headers: { 'Authorization': `Bearer ${this.token}` } }),
-                        fetch(`${this.BASE_URL}/festival/bin`, { headers: { 'Authorization': `Bearer ${this.token}` } })
+                        fetch(`${this.BASE_URL}/festival/bin`, { headers: { 'Authorization': `Bearer ${this.token}` } }),
+                        fetch(`${this.BASE_URL}/membership/`, { headers: { 'Authorization': `Bearer ${this.token}` } }),
                     ]);
                     if (ticketsRes.status === 401) return this.logout();
                     this.festivalTickets = await ticketsRes.json();
                     this.deletedFestivalTickets = await binRes.json();
+                    const memberships = await membershipsRes.json();
+                    this.confirmedMemberEmails = Array.isArray(memberships)
+                        ? memberships.filter(m => m.confirmed).map(m => m.email.toLowerCase())
+                        : [];
                     // Auto-fetch PayPal transactions when on festival tickets subtab
                     if (this.festivalTab === 'tickets') {
                         await this.fetchPaypalTransactions();
@@ -1708,6 +1715,9 @@ document.addEventListener('alpine:init', () => {
             if (tab === 'dinner') {
                 await this.fetchDinners();
             }
+            if (tab === 'checkin') {
+                this.checkinSearch = '';
+            }
         },
 
         async fetchTimeline() {
@@ -1729,6 +1739,25 @@ document.addEventListener('alpine:init', () => {
                 this.dinnerParticipants = await res.json();
                 this.dinnerCount = this.dinnerParticipants.length;
             } catch (e) { console.error(e); }
+        },
+
+        isMember(email) {
+            if (!email) return false;
+            return this.confirmedMemberEmails.includes(email.toLowerCase());
+        },
+
+        async checkinTicket(id) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival/${id}/checkin`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (res.status === 409) { alert('Già segnato come entrato'); return; }
+                if (!res.ok) throw new Error('Errore check-in');
+                const updated = await res.json();
+                const idx = this.festivalTickets.findIndex(t => t.id === id);
+                if (idx !== -1) this.festivalTickets[idx] = updated;
+            } catch (e) { alert(e.message); }
         },
 
         openEditDinner(d) {
