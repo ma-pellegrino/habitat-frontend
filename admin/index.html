@@ -2488,6 +2488,12 @@
                                                       style="color:#c00; font-size:11px; font-weight:bold;">
                                                     Non tesserato
                                                 </span>
+                                                <button x-show="t.checkedInAt"
+                                                        @click="undoCheckinTicket(t.id)"
+                                                        title="Annulla check-in"
+                                                        style="padding:3px 8px; background:#fff; color:#c00; border:1px solid #c00; cursor:pointer; font-family:inherit; font-size:11px;">
+                                                    Annulla
+                                                </button>
                                             </td>
                                         </tr>
                                     </template>

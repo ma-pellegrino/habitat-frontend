@@ -1820,6 +1820,20 @@ document.addEventListener('alpine:init', () => {
             } catch (e) { alert(e.message); }
         },
 
+        async undoCheckinTicket(id) {
+            if (!await this.showConfirm('Annullare il check-in?')) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival/${id}/checkin`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) throw new Error('Errore annullamento check-in');
+                const updated = await res.json();
+                const idx = this.festivalTickets.findIndex(t => t.id === id);
+                if (idx !== -1) this.festivalTickets[idx] = updated;
+            } catch (e) { alert(e.message); }
+        },
+
         openEditDinner(d) {
             this.editingDinner = { ...d };
         },
