@@ -2463,11 +2463,15 @@
                                                 <span x-show="!t.checkedInAt" style="color:#999; font-size:12px;">—</span>
                                             </td>
                                             <td x-show="canWrite">
-                                                <button x-show="!t.checkedInAt"
+                                                <button x-show="!t.checkedInAt && isMember(t.email)"
                                                         @click="checkinTicket(t.id)"
                                                         style="padding:3px 8px; background:#000; color:#fff; border:none; cursor:pointer; font-family:inherit; font-size:11px;">
                                                     Segna entrato
                                                 </button>
+                                                <span x-show="!t.checkedInAt && !isMember(t.email)"
+                                                      style="color:#c00; font-size:11px; font-weight:bold;">
+                                                    Non tesserato
+                                                </span>
                                             </td>
                                         </tr>
                                     </template>
