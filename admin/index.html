@@ -2522,12 +2522,12 @@
                                           :style="festivalInfoMembership.festivalAllergy ? 'color:#991b1b; font-weight:bold;' : 'color:#666;'"></span>
                                 </label>
 
-                                <template x-if="festivalInfoMembership.festivalAllergy">
-                                    <span style="color:#666; padding-top:6px;">Note allergie:</span>
-                                    <textarea x-model="festivalInfoMembership.festivalAllergyNotes"
-                                              rows="3"
-                                              style="font-family:inherit; font-size:13px; padding:6px; border:1px solid #000; resize:vertical;"></textarea>
-                                </template>
+                                <span x-show="festivalInfoMembership.festivalAllergy"
+                                      style="color:#666; padding-top:6px;">Note allergie:</span>
+                                <textarea x-show="festivalInfoMembership.festivalAllergy"
+                                          x-model="festivalInfoMembership.festivalAllergyNotes"
+                                          rows="3"
+                                          style="font-family:inherit; font-size:13px; padding:6px; border:1px solid #000; resize:vertical;"></textarea>
 
                                 <span style="color:#666; padding-top:6px;">Giorno arrivo:</span>
                                 <select x-model="festivalInfoMembership.festivalCheckinDay"
@@ -3797,15 +3797,11 @@
                                 <span
                                     x-text="editingMembership.birthPlace + (editingMembership.birthProvince ? ' (' + editingMembership.birthProvince + ')' : '')"></span>
 
-                                <template x-if="editingMembership.birthCountry">
-                                    <span style="color:#666;">Paese di Nascita:</span>
-                                    <span x-text="editingMembership.birthCountry"></span>
-                                </template>
+                                <span x-show="editingMembership.birthCountry" style="color:#666;">Paese di Nascita:</span>
+                                <span x-show="editingMembership.birthCountry" x-text="editingMembership.birthCountry"></span>
 
-                                <template x-if="editingMembership.vatNumber">
-                                    <span style="color:#666;">Partita IVA:</span>
-                                    <span x-text="editingMembership.vatNumber"></span>
-                                </template>
+                                <span x-show="editingMembership.vatNumber" style="color:#666;">Partita IVA:</span>
+                                <span x-show="editingMembership.vatNumber" x-text="editingMembership.vatNumber"></span>
                             </div>
                         </div>
 
@@ -3910,20 +3906,17 @@
                                     <span style="color:#666;">Allergie/Intolleranze:</span>
                                     <span x-text="editingMembership.festivalAllergy ? 'Sì' : 'No'"></span>
 
-                                    <template x-if="editingMembership.festivalAllergyNotes">
-                                        <span style="color:#666;">Note allergie:</span>
-                                        <span x-text="editingMembership.festivalAllergyNotes" style="white-space:pre-wrap;"></span>
-                                    </template>
+                                    <span x-show="editingMembership.festivalAllergyNotes" style="color:#666;">Note allergie:</span>
+                                    <span x-show="editingMembership.festivalAllergyNotes"
+                                          x-text="editingMembership.festivalAllergyNotes" style="white-space:pre-wrap;"></span>
 
-                                    <template x-if="editingMembership.festivalCheckinDay">
-                                        <span style="color:#666;">Giorno arrivo:</span>
-                                        <span x-text="{venerdi:'Venerdì', sabato:'Sabato', domenica:'Domenica'}[editingMembership.festivalCheckinDay] || editingMembership.festivalCheckinDay"></span>
-                                    </template>
+                                    <span x-show="editingMembership.festivalCheckinDay" style="color:#666;">Giorno arrivo:</span>
+                                    <span x-show="editingMembership.festivalCheckinDay"
+                                          x-text="{venerdi:'Venerdì', sabato:'Sabato', domenica:'Domenica'}[editingMembership.festivalCheckinDay] || editingMembership.festivalCheckinDay"></span>
 
-                                    <template x-if="editingMembership.festivalCheckinTime">
-                                        <span style="color:#666;">Orario arrivo:</span>
-                                        <span x-text="editingMembership.festivalCheckinTime"></span>
-                                    </template>
+                                    <span x-show="editingMembership.festivalCheckinTime" style="color:#666;">Orario arrivo:</span>
+                                    <span x-show="editingMembership.festivalCheckinTime"
+                                          x-text="editingMembership.festivalCheckinTime"></span>
                                 </div>
                             </div>
                         </template>
@@ -3934,10 +3927,9 @@
                                 <span>Creato il:</span>
                                 <span x-text="formatDate(editingMembership.createdAt)"></span>
 
-                                <template x-if="editingMembership.updatedAt !== editingMembership.createdAt">
-                                    <span>Aggiornato il:</span>
-                                    <span x-text="formatDate(editingMembership.updatedAt)"></span>
-                                </template>
+                                <span x-show="editingMembership.updatedAt !== editingMembership.createdAt">Aggiornato il:</span>
+                                <span x-show="editingMembership.updatedAt !== editingMembership.createdAt"
+                                      x-text="formatDate(editingMembership.updatedAt)"></span>
                             </div>
                         </div>
 
