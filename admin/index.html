@@ -866,7 +866,7 @@
                             <tbody>
                                 <template x-for="m in filteredMemberships" :key="m.id">
                                     <tr>
-                                        <td @click="editingMembership = m"
+                                        <td @click="editingMembership = {...m}"
                                             style="cursor:pointer; text-decoration:underline;"
                                             x-text="formatName(m.surname) + ' ' + formatName(m.name)"></td>
                                         <td x-text="m.email"></td>
@@ -2541,6 +2541,15 @@
                                 <span style="color:#666; padding-top:6px;">Orario arrivo:</span>
                                 <input type="time" x-model="festivalInfoMembership.festivalCheckinTime"
                                        style="font-family:inherit; font-size:13px; padding:5px; border:1px solid #000;">
+
+                                <span style="color:#666; padding-top:6px;">Metodo pagamento:</span>
+                                <select x-model="festivalInfoMembership.paymentMethod"
+                                        style="font-family:inherit; font-size:13px; padding:5px; border:1px solid #000;">
+                                    <template x-for="opt in paymentMethodOptions(festivalInfoMembership.paymentMethod)" :key="opt.value">
+                                        <option :value="opt.value" x-text="opt.label"
+                                                :selected="opt.value === festivalInfoMembership.paymentMethod"></option>
+                                    </template>
+                                </select>
                             </div>
 
                             <div style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end;">
@@ -3865,7 +3874,18 @@
                                 Pagamento e Stato</h4>
                             <div style="display:grid; grid-template-columns:150px 1fr; gap:8px; font-size:14px;">
                                 <span style="color:#666;">Metodo Pagamento:</span>
-                                <span x-text="editingMembership.paymentMethod"></span>
+                                <template x-if="canWrite">
+                                    <select x-model="editingMembership.paymentMethod"
+                                            style="font-family:inherit; font-size:13px; padding:5px; border:1px solid #000;">
+                                        <template x-for="opt in paymentMethodOptions(editingMembership.paymentMethod)" :key="opt.value">
+                                            <option :value="opt.value" x-text="opt.label + ' (' + opt.value + ')'"
+                                                    :selected="opt.value === editingMembership.paymentMethod"></option>
+                                        </template>
+                                    </select>
+                                </template>
+                                <template x-if="!canWrite">
+                                    <span x-text="editingMembership.paymentMethod"></span>
+                                </template>
 
                                 <span style="color:#666;">Stato:</span>
                                 <span x-text="editingMembership.confirmed ? 'Confermato' : 'In attesa di conferma'"
@@ -3915,8 +3935,12 @@
                             </div>
                         </div>
 
-                        <button @click="editingMembership = null"
-                            style="width:100%; border:1px solid #000; padding:10px 20px; cursor:pointer; background:#fff;">Chiudi</button>
+                        <div style="display:flex; gap:8px;">
+                            <button @click="editingMembership = null"
+                                style="flex:1; border:1px solid #000; padding:10px 20px; cursor:pointer; background:#fff;">Chiudi</button>
+                            <button x-show="canWrite" @click="saveMembershipPayment()"
+                                style="flex:1; border:none; padding:10px 20px; cursor:pointer; background:#000; color:#fff;">Salva</button>
+                        </div>
                     </div>
                 </div>
             </template>

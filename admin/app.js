@@ -1786,8 +1786,49 @@ document.addEventListener('alpine:init', () => {
             } catch (e) { alert(e.message); }
         },
 
+        paymentMethodOptions(current) {
+            const habitat = [
+                { value: 'HabitatPaypal', label: 'Paypal' },
+                { value: 'HabitatIban', label: 'Iban' },
+                { value: 'CashHabitat', label: 'Contanti' },
+                { value: 'HabitatCard', label: 'Carta' },
+            ];
+            const distretto = [
+                { value: 'DistrettoPaypal', label: 'Paypal' },
+                { value: 'DistrettoIban', label: 'Iban' },
+                { value: 'CashDistrettoA', label: 'Contanti' },
+                { value: 'DistrettoCard', label: 'Carta' },
+            ];
+            return habitat.some(o => o.value === current) ? habitat : distretto;
+        },
+
+        async syncTesseraExpense(membership, oldMethod) {
+            const habitatMap = { HabitatPaypal: 'paypal', HabitatIban: 'iban', CashHabitat: 'cash', HabitatCard: 'card' };
+            if (!membership.confirmed) return;
+            if (!(oldMethod in habitatMap) || !(membership.paymentMethod in habitatMap)) return;
+            if (oldMethod === membership.paymentMethod) return;
+            const warn = () => alert('Metodo pagamento aggiornato, ma la voce flow cassa "Tessera ' + membership.surname + ' ' + membership.name + '" non è stata aggiornata: correggila a mano.');
+            try {
+                const res = await fetch(`${this.BASE_URL}/expenses/`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+                if (!res.ok) { warn(); return; }
+                const expenses = await res.json();
+                const title = `Tessera ${membership.surname} ${membership.name}`;
+                const matches = (Array.isArray(expenses) ? expenses : [])
+                    .filter(e => e.expenseType === 'tessera' && e.title === title)
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                if (!matches.length) { warn(); return; }
+                const resP = await fetch(`${this.BASE_URL}/expenses/${matches[0].id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ paymentMethod: habitatMap[membership.paymentMethod] })
+                });
+                if (!resP.ok) warn();
+            } catch (e) { warn(); }
+        },
+
         async saveFestivalInfo() {
             const m = this.festivalInfoMembership;
+            const oldMethod = this.membershipsByEmail[m.email.toLowerCase()]?.paymentMethod;
             try {
                 const res = await fetch(`${this.BASE_URL}/membership/${m.id}`, {
                     method: 'PATCH',
@@ -1797,12 +1838,35 @@ document.addEventListener('alpine:init', () => {
                         festivalAllergyNotes: m.festivalAllergyNotes || null,
                         festivalCheckinDay: m.festivalCheckinDay || null,
                         festivalCheckinTime: m.festivalCheckinTime || null,
+                        paymentMethod: m.paymentMethod,
                     })
                 });
                 if (!res.ok) { alert('Errore durante il salvataggio'); return; }
                 const updated = await res.json();
                 this.membershipsByEmail[updated.email.toLowerCase()] = updated;
                 this.festivalInfoMembership = { ...updated };
+                if (oldMethod) await this.syncTesseraExpense(updated, oldMethod);
+            } catch (e) { alert('Errore durante il salvataggio'); }
+        },
+
+        async saveMembershipPayment() {
+            const m = this.editingMembership;
+            const original = this.memberships.find(x => x.id === m.id);
+            const oldMethod = original?.paymentMethod;
+            if (oldMethod === m.paymentMethod) { this.editingMembership = null; return; }
+            try {
+                const res = await fetch(`${this.BASE_URL}/membership/${m.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ paymentMethod: m.paymentMethod })
+                });
+                if (!res.ok) { alert('Errore durante il salvataggio'); return; }
+                const updated = await res.json();
+                if (original) original.paymentMethod = updated.paymentMethod;
+                const emailKey = updated.email?.toLowerCase();
+                if (emailKey && this.membershipsByEmail[emailKey]) this.membershipsByEmail[emailKey] = updated;
+                if (oldMethod) await this.syncTesseraExpense(updated, oldMethod);
+                this.editingMembership = null;
             } catch (e) { alert('Errore durante il salvataggio'); }
         },
 
