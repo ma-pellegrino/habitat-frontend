@@ -428,7 +428,7 @@ document.addEventListener('alpine:init', () => {
                     if (this.festivalTab === 'planner') {
                         await this.fetchPlannerData();
                     }
-                    if (this.festivalTab === 'volunteers') {
+                    if (this.festivalTab === 'volunteers' || this.festivalTab === 'checkin') {
                         await this.fetchVolunteers();
                     }
                     if (this.festivalTab === 'timeline') {
@@ -1712,7 +1712,7 @@ document.addEventListener('alpine:init', () => {
             if (tab === 'planner') {
                 await this.fetchPlannerData();
             }
-            if (tab === 'volunteers') {
+            if (tab === 'volunteers' || tab === 'checkin') {
                 await this.fetchVolunteers();
             }
             if (tab === 'timeline') {
@@ -1775,6 +1775,16 @@ document.addEventListener('alpine:init', () => {
 
         ticketMembership(t) {
             return this.festivalMembership(t.membershipEmail) || this.festivalMembership(t.email);
+        },
+
+        artistMemberships() {
+            return Object.values(this.membershipsByEmail)
+                .filter(m => m.isArtist)
+                .sort((a, b) => (a.surname + ' ' + a.name).localeCompare(b.surname + ' ' + b.name));
+        },
+
+        volunteerMembership(v) {
+            return v.email ? (this.membershipsByEmail[v.email.toLowerCase()] || null) : null;
         },
 
         openLinkMember(t) {
@@ -1943,6 +1953,60 @@ document.addEventListener('alpine:init', () => {
                 const updated = await res.json();
                 const idx = this.festivalTickets.findIndex(t => t.id === id);
                 if (idx !== -1) this.festivalTickets[idx] = updated;
+            } catch (e) { alert(e.message); }
+        },
+
+        async checkinArtist(id) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/membership/${id}/checkin`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (res.status === 409) { alert('Già segnato come entrato'); return; }
+                if (!res.ok) throw new Error('Errore check-in');
+                const updated = await res.json();
+                this.membershipsByEmail[updated.email.toLowerCase()] = updated;
+            } catch (e) { alert(e.message); }
+        },
+
+        async undoCheckinArtist(id) {
+            if (!await this.showConfirm('Annullare il check-in?')) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/membership/${id}/checkin`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) throw new Error('Errore annullamento check-in');
+                const updated = await res.json();
+                this.membershipsByEmail[updated.email.toLowerCase()] = updated;
+            } catch (e) { alert(e.message); }
+        },
+
+        async checkinVolunteer(id) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival/volunteers/${id}/checkin`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (res.status === 409) { alert('Già segnato come entrato'); return; }
+                if (!res.ok) throw new Error('Errore check-in');
+                const updated = await res.json();
+                const idx = this.volunteers.findIndex(v => v.id === id);
+                if (idx !== -1) this.volunteers[idx] = updated;
+            } catch (e) { alert(e.message); }
+        },
+
+        async undoCheckinVolunteer(id) {
+            if (!await this.showConfirm('Annullare il check-in?')) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival/volunteers/${id}/checkin`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                if (!res.ok) throw new Error('Errore annullamento check-in');
+                const updated = await res.json();
+                const idx = this.volunteers.findIndex(v => v.id === id);
+                if (idx !== -1) this.volunteers[idx] = updated;
             } catch (e) { alert(e.message); }
         },
 
