@@ -26,6 +26,7 @@ document.addEventListener('alpine:init', () => {
         festivalTicketCount: 0,
         festivalConfirmedCount: 0,
         confirmedMemberEmails: [],
+        pendingMemberEmails: [],
         membershipsByEmail: {},
         festivalInfoMembership: null,
         checkinSearch: '',
@@ -412,6 +413,7 @@ document.addEventListener('alpine:init', () => {
                     const memberships = await membershipsRes.json();
                     const confirmedMemberships = Array.isArray(memberships) ? memberships.filter(m => m.confirmed) : [];
                     this.confirmedMemberEmails = confirmedMemberships.map(m => m.email.toLowerCase());
+                    this.pendingMemberEmails = (Array.isArray(memberships) ? memberships.filter(m => !m.confirmed) : []).map(m => m.email.toLowerCase());
                     this.membershipsByEmail = {};
                     confirmedMemberships.forEach(m => { this.membershipsByEmail[m.email.toLowerCase()] = m; });
                     // Auto-fetch PayPal transactions when on festival tickets subtab
@@ -1760,6 +1762,13 @@ document.addEventListener('alpine:init', () => {
         // or via a manually linked membership (membershipEmail)
         ticketIsMember(t) {
             return this.isMember(t.membershipEmail) || this.isMember(t.email);
+        },
+
+        // Ticket holder has requested a membership that is still awaiting approval
+        // (e.g. waiting for cash/iban payment)
+        ticketHasPendingMembership(t) {
+            const pending = email => !!email && this.pendingMemberEmails.includes(email.toLowerCase());
+            return !this.ticketIsMember(t) && (pending(t.membershipEmail) || pending(t.email));
         },
 
         ticketMembership(t) {

@@ -1769,8 +1769,12 @@
                                 <b x-text="festivalTickets.filter(t => t.confirmed && ticketIsMember(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:green"></b>
                             </div>
                             <div class="card" style="flex:1">
+                                <small>TESSERA IN ATTESA</small><br>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && ticketHasPendingMembership(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:orange"></b>
+                            </div>
+                            <div class="card" style="flex:1">
                                 <small>NON TESSERATI</small><br>
-                                <b x-text="festivalTickets.filter(t => t.confirmed && !ticketIsMember(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:#c00"></b>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && !ticketIsMember(t) && !ticketHasPendingMembership(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:#c00"></b>
                             </div>
                         </div>
 
@@ -2409,7 +2413,11 @@
                             </div>
                             <div class="card" style="flex:1">
                                 <small>NON TESSERATI</small><br>
-                                <b x-text="festivalTickets.filter(t => t.confirmed && !ticketIsMember(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:#c00"></b>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && !ticketIsMember(t) && !ticketHasPendingMembership(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:#c00"></b>
+                            </div>
+                            <div class="card" style="flex:1">
+                                <small>TESSERA IN ATTESA</small><br>
+                                <b x-text="festivalTickets.filter(t => t.confirmed && ticketHasPendingMembership(t)).reduce((s,t) => s + (t.quantity||1), 0)" style="color:orange"></b>
                             </div>
                         </div>
                         <div class="card">
@@ -2465,6 +2473,11 @@
                                                         style="margin-left:2px; padding:2px 5px; background:none; color:#c00; border:1px solid #c00; border-radius:3px; font-size:10px; cursor:pointer; font-family:inherit;">
                                                     ✕
                                                 </button>
+                                                <span x-show="ticketHasPendingMembership(t)"
+                                                      title="Richiesta tessera in attesa di approvazione (probabile pagamento cash/iban da verificare)"
+                                                      style="margin-right:4px; padding:2px 6px; background:#fff7ed; color:#c2410c; border:1px solid #fb923c; border-radius:3px; font-size:10px; font-weight:bold;">
+                                                    IN ATTESA
+                                                </span>
                                                 <button x-show="!ticketIsMember(t) && canWrite"
                                                         @click="openLinkMember(t)"
                                                         style="padding:2px 6px; background:#fff; color:#000; border:1px solid #000; border-radius:3px; font-size:10px; cursor:pointer; font-family:inherit;">
