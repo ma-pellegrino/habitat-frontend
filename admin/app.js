@@ -31,6 +31,7 @@ document.addEventListener('alpine:init', () => {
         festivalInfoMembership: null,
         checkinSearch: '',
         linkingTicket: null,
+        linkingVolunteer: null,
         memberSearch: '',
         festivalApproval: null,
         editingFestivalTicket: null,
@@ -1784,12 +1785,33 @@ document.addEventListener('alpine:init', () => {
         },
 
         volunteerMembership(v) {
-            return v.email ? (this.membershipsByEmail[v.email.toLowerCase()] || null) : null;
+            const email = v.membershipEmail || v.email;
+            return email ? (this.membershipsByEmail[email.toLowerCase()] || null) : null;
         },
 
         openLinkMember(t) {
             this.linkingTicket = t;
             this.memberSearch = '';
+        },
+
+        openLinkVolunteer(v) {
+            this.linkingVolunteer = v;
+            this.memberSearch = '';
+        },
+
+        async linkVolunteerMembership(volunteer, membershipEmail) {
+            try {
+                const res = await fetch(`${this.BASE_URL}/festival/volunteers/${volunteer.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ membershipEmail })
+                });
+                if (!res.ok) throw new Error('Errore durante l\'associazione della tessera');
+                const updated = await res.json();
+                const idx = this.volunteers.findIndex(v => v.id === volunteer.id);
+                if (idx !== -1) this.volunteers[idx] = updated;
+                this.linkingVolunteer = null;
+            } catch (e) { alert(e.message); }
         },
 
         async linkMembership(ticket, membershipEmail) {
