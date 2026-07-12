@@ -32,6 +32,7 @@ document.addEventListener('alpine:init', () => {
         checkinSearch: '',
         linkingTicket: null,
         linkingVolunteer: null,
+        addingArtist: false,
         memberSearch: '',
         festivalApproval: null,
         editingFestivalTicket: null,
@@ -1814,6 +1815,24 @@ document.addEventListener('alpine:init', () => {
             } catch (e) { alert(e.message); }
         },
 
+        async toggleArtist(membership, isArtist) {
+            if (!isArtist && !await this.showConfirm('Rimuovere il flag artista da questa tessera?')) return;
+            try {
+                const res = await fetch(`${this.BASE_URL}/membership/${membership.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                    body: JSON.stringify({ isArtist })
+                });
+                if (!res.ok) throw new Error('Errore durante il salvataggio');
+                const updated = await res.json();
+                const key = updated.email?.toLowerCase();
+                if (key) this.membershipsByEmail[key] = updated;
+                const original = this.memberships.find(x => x.id === updated.id);
+                if (original) original.isArtist = updated.isArtist;
+                this.addingArtist = false;
+            } catch (e) { alert(e.message); }
+        },
+
         async linkMembership(ticket, membershipEmail) {
             try {
                 const res = await fetch(`${this.BASE_URL}/festival/${ticket.id}`, {
@@ -1896,25 +1915,34 @@ document.addEventListener('alpine:init', () => {
 
         async saveMembershipEdits() {
             const m = this.editingMembership;
-            const original = this.memberships.find(x => x.id === m.id);
+            // Il modal può essere aperto sia dal tab Associati (memberships) sia dal check-in (membershipsByEmail)
+            const original = this.memberships.find(x => x.id === m.id)
+                || Object.values(this.membershipsByEmail).find(x => x.id === m.id);
             const oldMethod = original?.paymentMethod;
             const oldEmail = original?.email;
             const newEmail = (m.email || '').trim();
+            if (!m.name?.trim() || !m.surname?.trim()) { alert('Nome e cognome sono obbligatori'); return; }
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) { alert('Email non valida'); return; }
             const emailChanged = !!oldEmail && oldEmail !== newEmail;
-            if (oldMethod === m.paymentMethod && !emailChanged) { this.editingMembership = null; return; }
             try {
                 const res = await fetch(`${this.BASE_URL}/membership/${m.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                    body: JSON.stringify({ paymentMethod: m.paymentMethod, email: newEmail })
+                    body: JSON.stringify({
+                        name: m.name.trim(),
+                        surname: m.surname.trim(),
+                        phoneNumber: m.phoneNumber,
+                        email: newEmail,
+                        paymentMethod: m.paymentMethod,
+                        festivalAllergy: m.festivalAllergy,
+                        festivalAllergyNotes: m.festivalAllergyNotes || null,
+                        festivalCheckinDay: m.festivalCheckinDay || null,
+                        festivalCheckinTime: m.festivalCheckinTime || null,
+                    })
                 });
                 if (!res.ok) { alert('Errore durante il salvataggio'); return; }
                 const updated = await res.json();
-                if (original) {
-                    original.paymentMethod = updated.paymentMethod;
-                    original.email = updated.email;
-                }
+                if (original) Object.assign(original, updated);
                 const oldKey = oldEmail?.toLowerCase();
                 const newKey = updated.email?.toLowerCase();
                 if (oldKey && this.membershipsByEmail[oldKey]) {

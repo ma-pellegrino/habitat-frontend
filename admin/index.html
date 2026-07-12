@@ -2528,6 +2528,10 @@
                             <h3 style="margin:0 0 15px">Check-in — artisti
                                 <small style="color:#666; font-weight:normal;"
                                        x-text="'(' + artistMemberships().filter(m => m.festivalCheckedInAt).length + ' / ' + artistMemberships().length + ' entrati)'"></small>
+                                <button x-show="canWrite" @click="addingArtist = true; memberSearch = ''"
+                                        style="float:right; padding:4px 10px; background:#fff; color:#000; border:1px solid #000; cursor:pointer; font-family:inherit; font-size:12px; font-weight:normal;">
+                                    + Aggiungi artista
+                                </button>
                             </h3>
                             <table>
                                 <thead>
@@ -2567,6 +2571,16 @@
                                                 <button @click="festivalInfoMembership = {...m}"
                                                         style="margin-left:4px; padding:2px 6px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:3px; font-size:10px; cursor:pointer; font-family:inherit;">
                                                     Info
+                                                </button>
+                                                <button @click="editingMembership = {...m}"
+                                                        style="margin-left:4px; padding:2px 6px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:3px; font-size:10px; cursor:pointer; font-family:inherit;">
+                                                    Modifica
+                                                </button>
+                                                <button x-show="canWrite"
+                                                        @click="toggleArtist(m, false)"
+                                                        title="Rimuovi flag artista dalla tessera"
+                                                        style="margin-left:2px; padding:2px 5px; background:none; color:#c00; border:1px solid #c00; border-radius:3px; font-size:10px; cursor:pointer; font-family:inherit;">
+                                                    ✕
                                                 </button>
                                             </td>
                                             <td>
@@ -2668,7 +2682,12 @@
                                                 </span>
                                                 <span x-show="!v.checkedInAt" style="color:#999; font-size:12px;">—</span>
                                             </td>
-                                            <td x-show="canWrite">
+                                            <td x-show="canWrite" style="white-space:nowrap;">
+                                                <button @click="openEditVolunteer(v)"
+                                                        title="Modifica"
+                                                        style="padding:3px 8px; background:#fff; color:#374151; border:1px solid #d1d5db; cursor:pointer; font-family:inherit; font-size:11px; margin-right:4px;">
+                                                    ✎
+                                                </button>
                                                 <button x-show="!v.checkedInAt && volunteerMembership(v)?.confirmed"
                                                         @click="checkinVolunteer(v.id)"
                                                         style="padding:3px 8px; background:#000; color:#fff; border:none; cursor:pointer; font-family:inherit; font-size:11px;">
@@ -2765,10 +2784,11 @@
                 </template>
 
                 <!-- MODAL: Associa tessera a biglietto -->
-                <template x-if="linkingTicket || linkingVolunteer">
-                    <div class="modal-overlay" @click.self="linkingTicket = null; linkingVolunteer = null">
+                <template x-if="linkingTicket || linkingVolunteer || addingArtist">
+                    <div class="modal-overlay" @click.self="linkingTicket = null; linkingVolunteer = null; addingArtist = false">
                         <div class="modal-box" style="text-align:left; min-width:400px; max-width:520px;">
-                            <h3 style="margin:0 0 5px; font-size:18px;">Associa tessera</h3>
+                            <h3 style="margin:0 0 5px; font-size:18px;"
+                                x-text="addingArtist ? 'Aggiungi artista' : 'Associa tessera'"></h3>
                             <p style="margin:0 0 15px; color:#666; font-size:13px;">
                                 <span x-show="linkingTicket">
                                     Biglietto di <b x-text="linkingTicket ? linkingTicket.name + ' ' + linkingTicket.surname : ''"></b>
@@ -2777,6 +2797,9 @@
                                 <span x-show="linkingVolunteer">
                                     Volontario <b x-text="linkingVolunteer ? linkingVolunteer.name : ''"></b>
                                     (<span x-text="linkingVolunteer ? (linkingVolunteer.email || 'senza email') : ''"></span>)
+                                </span>
+                                <span x-show="addingArtist">
+                                    Seleziona la tessera da marcare come <b>ARTISTA</b>
                                 </span>
                             </p>
                             <input type="text" x-model="memberSearch"
@@ -2787,7 +2810,7 @@
                                     memberSearch === '' ||
                                     (m.name + ' ' + m.surname + ' ' + m.email).toLowerCase().includes(memberSearch.toLowerCase())
                                 )" :key="m.id">
-                                    <div @click="linkingTicket ? linkMembership(linkingTicket, m.email) : linkVolunteerMembership(linkingVolunteer, m.email)"
+                                    <div @click="linkingTicket ? linkMembership(linkingTicket, m.email) : (linkingVolunteer ? linkVolunteerMembership(linkingVolunteer, m.email) : toggleArtist(m, true))"
                                          style="padding:8px 10px; border-bottom:1px solid #eee; cursor:pointer; font-size:13px;"
                                          onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
                                         <b x-text="m.name + ' ' + m.surname"></b>
@@ -2795,6 +2818,10 @@
                                         <span x-show="!m.confirmed"
                                               style="margin-left:6px; padding:1px 5px; background:#fff7ed; color:#c2410c; border:1px solid #fb923c; border-radius:3px; font-size:10px; font-weight:bold;">
                                             IN ATTESA
+                                        </span>
+                                        <span x-show="m.isArtist"
+                                              style="margin-left:6px; padding:1px 5px; background:#eef2ff; color:#3730a3; border:1px solid #818cf8; border-radius:3px; font-size:10px; font-weight:bold;">
+                                            ARTISTA
                                         </span>
                                     </div>
                                 </template>
@@ -2807,7 +2834,7 @@
                                 </div>
                             </div>
                             <div style="margin-top:15px; display:flex; justify-content:flex-end;">
-                                <button @click="linkingTicket = null; linkingVolunteer = null"
+                                <button @click="linkingTicket = null; linkingVolunteer = null; addingArtist = false"
                                         style="padding:6px 16px; background:#fff; color:#000; border:1px solid #000; cursor:pointer; font-family:inherit;">
                                     Annulla
                                 </button>
